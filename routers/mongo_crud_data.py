@@ -16,6 +16,81 @@ db = client["nutrition_ai"]
 collection = db["nutrition_app_user"]
 
 
+def save_chat_to_mongo(email: str, history: str) -> None:
+    try:
+        collection_chat = db['chat_data']
+        if email in collection_chat.distinct("email_id"):
+            collection_chat.update_one({"email_id": email}, {"$set": {"history": history}})
+        collection_chat.insert_one({"email_id": email, "history": history})
+        return None
+    except Exception as e:
+        logger.error(f"Error in writing chat data to mongo db: {str(e)}")
+        return None
+
+
+def save_meal_to_mongo(email: str, meal: dict) -> None:
+    try:
+        collection_meal = db['meal_data']
+        if email in collection_meal.distinct("email_id"):
+            collection_meal.update_one({"email_id": email}, {"$set": {"meal": meal}})
+        collection_meal.insert_one({"email_id": email, "meal": meal})
+        return None
+    except Exception as e:
+        logger.error(f"Error in writing meal data to mongo db: {str(e)}")
+        return None
+
+
+def load_meal_from_mongo(email: str) -> dict:
+    try:
+        collection_meal = db['meal_data']
+        if email in collection_meal.distinct("email_id"):
+            data = collection_meal.find_one({"email_id": email}, {"_id": 0})
+            return json.loads(data['meal'])
+        else:
+            return {}
+    except Exception as e:
+        logger.error(f"Error in reading meal data from mongo db: {str(e)}")
+        return {}
+
+
+def save_grocery_list_to_mongo(email: str, grocery_list: dict) -> None:
+    try:
+        collection_grocery = db['grocery_data']
+        if email in collection_grocery.distinct("email_id"):
+            collection_grocery.update_one({"email_id": email}, {"$set": {"grocery_list": grocery_list}})
+        collection_grocery.insert_one({"email_id": email, "grocery_list": grocery_list})
+        return None
+    except Exception as e:
+        logger.error(f"Error in writing grocery list data to mongo db: {str(e)}")
+        return None
+
+
+def load_grocery_list_from_mongo(email: str) -> dict:
+    try:
+        collection_grocery = db['grocery_data']
+        if email in collection_grocery.distinct("email_id"):
+            data = collection_grocery.find_one({"email_id": email}, {"_id": 0})
+            return data['grocery_list']
+        else:
+            return {}
+    except Exception as e:
+        logger.error(f"Error in reading grocery list data from mongo db: {str(e)}")
+        return {}
+
+
+def get_user_data_from_mongo(email: str) -> dict:
+    try:
+        collection = db["nutrition_user"]
+        if email in collection.distinct("email_id"):
+            data = collection.find_one({"email_id": email}, {"_id": 0})
+            return json.loads(data['data'])
+        else:
+            return {}
+    except Exception as e:
+        logger.error(f"Error in reading data from mongo db: {str(e)}")
+        return {}
+
+
 def verify_data(data: str) -> bool:
     """
     Verify presence of fields in data and its type
@@ -143,3 +218,71 @@ async def delete_user_info_from_mongo(email_id: str) -> JSONResponse:
         logger.error(f"Error in deleting data from mongo db: {str(e)}")
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
+
+@router.post("/write_calorie_info_to_mongo", tags=["mongo_db"])
+async def write_calorie_info_to_mongo(email_id: Annotated[Union[str, None], Header()],
+                                      calorie_count: int = Form(...)) -> JSONResponse:
+    """
+    Writes data to mongo db
+    :param calorie_count:
+    :param email_id:
+    :return:
+    """
+    try:
+        collection = db["calorie_data"]
+        logger.info(f"Data received for writing to mongo db")
+        if email_id in collection.distinct("email_id"):
+            current_calorie_data = collection.find_one({"email_id": email_id}, {"_id": 0})
+            collection.update_one({"email_id": email_id}, {"$set": {"data": calorie_count + int(current_calorie_data['data'])}})
+        else:
+            collection.insert_one({"email_id": email_id, "data": int(calorie_count)})
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data written to mongo db"})
+    except Exception as e:
+        logger.error(f"Error in writing data to mongo db: {str(e)}")
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content={"message": "Internal server error"})
+
+@router.get("/read_calorie_info_from_mongo/{email_id}", tags=["mongo_db"])
+async def read_calorie_info_from_mongo(email_id: str) -> JSONResponse:
+    """
+    Reads data from mongo db
+    :param email_id:
+    :return:
+    """
+    try:
+        collection = db["calorie_data"]
+        logger.info(f"Data received for reading from mongo db")
+        if email_id in collection.distinct("email_id"):
+            data = collection.find_one({"email_id": email_id}, {"_id": 0})
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data fetched from mongo db",
+                                                                         "calorie_count": data})
+        else:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "No data found in mongo db"})
+    except Exception as e:
+        logger.error(f"Error in reading data from mongo db: {str(e)}")
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content={"message": "Internal server error"})
+
+@router.post("/delete_calorie_info_from_mongo", tags=["mongo_db"])
+async def delete_calorie_info_from_mongo(email_id: Annotated[Union[str, None], Header()],
+                                      calorie_count: int = Form(...)) -> JSONResponse:
+    """
+    Deletes data from mongo db
+    :param calorie_count:
+    :param email_id:
+    :return:
+    """
+    try:
+        collection = db["calorie_data"]
+        logger.info(f"Data received for deleting from mongo db")
+        if email_id in collection.distinct("email_id"):
+            current_calorie_data = collection.find_one({"email_id": email_id}, {"_id": 0})
+            collection.update_one({"email_id": email_id}, {"$set": {"data": current_calorie_data['data'] - calorie_count }})
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data deleted from mongo db"})
+        else:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "No data found in mongo db"})
+    except Exception as e:
+        logger.error(f"Error in deleting data from mongo db: {str(e)}")
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content={"message": "Internal server error"})
+

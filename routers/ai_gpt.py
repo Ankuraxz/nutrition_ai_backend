@@ -6,6 +6,7 @@ from fastapi import APIRouter, Form, HTTPException, Header
 from typing import Optional, Annotated, Union
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAIChat
+from mongo_crud_data import *
 from ..settings.config import Config
 
 logging.basicConfig(level=logging.INFO)
@@ -13,83 +14,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 client = Config.get_mongo_client()
-db = client["nutrition_ai"]
 chat_llm = Config.get_openai_chat_connection()
-
-
-def get_user_data_from_mongo(email: str) -> dict:
-    try:
-        collection = db["nutrition_user"]
-        if email in collection.distinct("email_id"):
-            data = collection.find_one({"email_id": email}, {"_id": 0})
-            return json.loads(data['data'])
-        else:
-            return {}
-    except Exception as e:
-        logger.error(f"Error in reading data from mongo db: {str(e)}")
-        return {}
-
-
-def save_chat_to_mongo(email: str, history: str) -> None:
-    try:
-        collection_chat = db['chat_data']
-        if email in collection_chat.distinct("email_id"):
-            collection_chat.update_one({"email_id": email}, {"$set": {"history": history}})
-        collection_chat.insert_one({"email_id": email, "history": history})
-        return None
-    except Exception as e:
-        logger.error(f"Error in writing chat data to mongo db: {str(e)}")
-        return None
-
-
-def save_meal_to_mongo(email: str, meal: dict) -> None:
-    try:
-        collection_meal = db['meal_data']
-        if email in collection_meal.distinct("email_id"):
-            collection_meal.update_one({"email_id": email}, {"$set": {"meal": meal}})
-        collection_meal.insert_one({"email_id": email, "meal": meal})
-        return None
-    except Exception as e:
-        logger.error(f"Error in writing meal data to mongo db: {str(e)}")
-        return None
-
-
-def load_meal_from_mongo(email: str) -> dict:
-    try:
-        collection_meal = db['meal_data']
-        if email in collection_meal.distinct("email_id"):
-            data = collection_meal.find_one({"email_id": email}, {"_id": 0})
-            return json.loads(data['meal'])
-        else:
-            return {}
-    except Exception as e:
-        logger.error(f"Error in reading meal data from mongo db: {str(e)}")
-        return {}
-
-
-def save_grocery_list_to_mongo(email: str, grocery_list: dict) -> None:
-    try:
-        collection_grocery = db['grocery_data']
-        if email in collection_grocery.distinct("email_id"):
-            collection_grocery.update_one({"email_id": email}, {"$set": {"grocery_list": grocery_list}})
-        collection_grocery.insert_one({"email_id": email, "grocery_list": grocery_list})
-        return None
-    except Exception as e:
-        logger.error(f"Error in writing grocery list data to mongo db: {str(e)}")
-        return None
-
-
-def load_grocery_list_from_mongo(email: str) -> dict:
-    try:
-        collection_grocery = db['grocery_data']
-        if email in collection_grocery.distinct("email_id"):
-            data = collection_grocery.find_one({"email_id": email}, {"_id": 0})
-            return data['grocery_list']
-        else:
-            return {}
-    except Exception as e:
-        logger.error(f"Error in reading grocery list data from mongo db: {str(e)}")
-        return {}
 
 
 def json_cleaner(data):
@@ -135,28 +60,18 @@ def chat(email_id: Annotated[Union[str, None], Header], message: str = Form(...)
             save_chat_to_mongo(email_id, json.dumps(history))
             return {"response": "STOPPING CHAT ", "history": history, "stop": True}
 
-        template = """
-        You are an AI powered Meal & Grocery Planner. Client will be talking to you about their queries regarding meals, groceries, goals. Here is the history of chat {history}, now the customer is saying {message}. Please respond to the customer in a polite manner. In case there is no history of chat, just respond to the customer's current message.
-        You will be provided with a user profile  {user_data} containing information of 
-          "name",
-          "age",
-          "gender", //male, female, other
-          "height", //in feet
-          "weight", //in lbs
-          "activity_level", //sedentary, light, moderate, active, very_active
-          "exercise_hours", //in hours
-          "job_type", //student, working
-          "work_type", //office, field, home, None
-          "work_hours",
-          "cooking_hours", //time dedicated to cooking
-          "proficiency_in_cooking", //low, medium, high
-          "goals", //healthy, weight_loss, muscle_gain
-          "dietary_restrictions": null, //None, vegetarian, vegan, gluten_free, dairy_free, nut_free
-          "diet_type", //balanced, keto, paleo, vegan, vegetarian
-          "allergies", //None, peanuts, shellfish, soy, dairy, eggs, gluten
-          "cuisine_preference", //american, italian, mexican, chinese, indian, thai, japanese
-          "budget", //0-100 dollars for weekly groceries
-          "grocery_frequency":, //weekly, bi-weekly, monthly
+        template = """You are an AI powered Meal & Grocery Planner. Client will be talking to you about their queries 
+        regarding meals, groceries, goals. Here is the history of chat {history}, now the customer is saying {
+        message}. Please respond to the customer in a polite manner. In case there is no history of chat, 
+        just respond to the customer's current message. You will be provided with a user profile  {user_data} 
+        containing information of "name", "age", "gender", //male, female, other "height", //in feet "weight", 
+        //in lbs "activity_level", //sedentary, light, moderate, active, very_active "exercise_hours", //in hours 
+        "job_type", //student, working "work_type", //office, field, home, None "work_hours", "cooking_hours", 
+        //time dedicated to cooking "proficiency_in_cooking", //low, medium, high "goals", //healthy, weight_loss, 
+        muscle_gain "dietary_restrictions": null, //None, vegetarian, vegan, gluten_free, dairy_free, 
+        nut_free "diet_type", //balanced, keto, paleo, vegan, vegetarian "allergies", //None, peanuts, shellfish, 
+        soy, dairy, eggs, gluten "cuisine_preference", //american, italian, mexican, chinese, indian, thai, 
+        japanese "budget", //0-100 dollars for weekly groceries "grocery_frequency":, //weekly, bi-weekly, monthly
 
           Following is the meal {meal} and grocery list {grocery_list} for the user: 
 
@@ -184,8 +99,8 @@ def chat(email_id: Annotated[Union[str, None], Header], message: str = Form(...)
         raise HTTPException(status_code=500, detail=f"Error in chat: {str(e)}")
 
 
-@router.post("/meal_generator", tags=["chat_ai"])
-def meal_generator(email_id: Annotated[Union[str, None], Header]):
+@router.get("/meal_generator/{email}", tags=["chat_ai"])
+def meal_generator(email_id):
     """
     Generate meals based on user's preferences
     :param email_id:
@@ -195,31 +110,19 @@ def meal_generator(email_id: Annotated[Union[str, None], Header]):
         user_data = get_user_data_from_mongo(email_id)
         if user_data is None or user_data == {}:
             raise HTTPException(status_code=404, detail="User data not found in mongo db")
-        template = """
-        You are an AI powered Meal generator, you will be provided with a user profile  {user_data} containing information of 
-          "name",
-          "age",
-          "gender", //male, female, other
-          "height", //in feet
-          "weight", //in lbs
-          "activity_level", //sedentary, light, moderate, active, very_active
-          "exercise_hours", //in hours
-          "job_type", //student, working
-          "work_type", //office, field, home, None
-          "work_hours",
-          "cooking_hours", //time dedicated to cooking
-          "proficiency_in_cooking", //low, medium, high
-          "goals", //healthy, weight_loss, muscle_gain
-          "dietary_restrictions": null, //None, vegetarian, vegan, gluten_free, dairy_free, nut_free
-          "diet_type", //balanced, keto, paleo, vegan, vegetarian
-          "allergies", //None, peanuts, shellfish, soy, dairy, eggs, gluten
-          "cuisine_preference", //american, italian, mexican, chinese, indian, thai, japanese
-          "budget", //0-100 dollars for weekly groceries
-          "grocery_frequency":, //weekly, bi-weekly, monthly
+        template = """You are an AI powered Meal generator, you will be provided with a user profile  {user_data} 
+        containing information of "name", "age", "gender", //male, female, other "height", //in feet "weight", 
+        //in lbs "activity_level", //sedentary, light, moderate, active, very_active "exercise_hours", //in hours 
+        "job_type", //student, working "work_type", //office, field, home, None "work_hours", "cooking_hours", 
+        //time dedicated to cooking "proficiency_in_cooking", //low, medium, high "goals", //healthy, weight_loss, 
+        muscle_gain "dietary_restrictions": null, //None, vegetarian, vegan, gluten_free, dairy_free, 
+        nut_free "diet_type", //balanced, keto, paleo, vegan, vegetarian "allergies", //None, peanuts, shellfish, 
+        soy, dairy, eggs, gluten "cuisine_preference", //american, italian, mexican, chinese, indian, thai, 
+        japanese "budget", //0-100 dollars for weekly groceries "grocery_frequency":, //weekly, bi-weekly, monthly
 
         TASK: You need to generate easy to cook at home meals for entire week, 3 meals per day as breakfast, lunch dinner based on user's preferences keeping in mind cooking hours & cooking proficiency and budget and dietary restrictions and allergy and nutritional goals and provide the information as json 
-        Example Response: ['day1':['breakfast':"eggs", 'lunch':"chicken salad", 'dinner':"pasta"], 'day2':['breakfast':"oatmeal", 'lunch':"chicken sandwich", 'dinner':"rice"], 'day3':['breakfast':"pancakes", 'lunch':"chicken soup", 'dinner':"pasta"], 'day4':['breakfast':"eggs", 'lunch':"chicken salad", 'dinner':"pasta"], 'day5':['breakfast':"oatmeal", 'lunch':"chicken sandwich", 'dinner':"rice"], 'day6':['breakfast':"pancakes", 'lunch':"chicken soup", 'dinner':"pasta"], 'day7':['breakfast':"eggs", 'lunch':"chicken salad", 'dinner':"pasta"]]
-        REMEMBER: day, breakfast, lunch, dinner are the keys and the values are the meals for the day
+        Example Response: ['day1':['breakfast':"eggs 19 calorie", 'lunch':"chicken salad 24 calorie", 'dinner':"pasta"], 'day2':['breakfast':"oatmeal", 'lunch':"chicken sandwich", 'dinner':"rice"], 'day3':['breakfast':"pancakes", 'lunch':"chicken soup", 'dinner':"pasta"], 'day4':['breakfast':"eggs", 'lunch':"chicken salad", 'dinner':"pasta"], 'day5':['breakfast':"oatmeal", 'lunch':"chicken sandwich", 'dinner':"rice"], 'day6':['breakfast':"pancakes", 'lunch':"chicken soup", 'dinner':"pasta"], 'day7':['breakfast':"eggs", 'lunch':"chicken salad", 'dinner':"pasta"]]
+        REMEMBER: day, breakfast, lunch, dinner are the keys and the values are the meals for the day along with their calorie count per serving
         RESPONSE CONSTRAINT: DO NOT OUTPUT EXTRA CHARACTERS, JUST OUTPUT RESPONSE TO THE CUSTOMER IN PROPER JSON.
         """
 
@@ -234,8 +137,8 @@ def meal_generator(email_id: Annotated[Union[str, None], Header]):
         raise HTTPException(status_code=500, detail=f"Error in meal generator: {str(e)}")
 
 
-@router.post("/grocery_list_generator", tags=["chat_ai"])
-def grocery_list_generator(email_id: Annotated[Union[str, None], Header]):
+@router.get("/grocery_list_generator/{email}", tags=["chat_ai"])
+def grocery_list_generator(email_id):
     """
     Generate grocery list based on user's preferences
     :param email_id:
@@ -275,8 +178,8 @@ def grocery_list_generator(email_id: Annotated[Union[str, None], Header]):
         raise HTTPException(status_code=500, detail=f"Error in grocery list generator: {str(e)}")
 
 
-@router.post("/show_meal", tags=["chat_ai"])
-def show_meal(email_id: Annotated[Union[str, None], Header]):
+@router.get("/show_meal/{email}", tags=["chat_ai"])
+def show_meal(email_id):
     """
     Show meal from user's profile
     :param email_id:
@@ -300,8 +203,8 @@ def clean_grocery_list(grocery_list):
     return grocery_list
 
 
-@router.post("/show_grocery_list", tags=["chat_ai"])
-def show_grocery_list(email_id: Annotated[Union[str, None], Header]):
+@router.get("/show_grocery_list/{email}", tags=["chat_ai"])
+def show_grocery_list(email_id):
     """
     Show grocery list from user's profile
     :param email_id:

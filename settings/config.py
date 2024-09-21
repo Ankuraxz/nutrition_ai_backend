@@ -55,7 +55,7 @@ class Config:
     def get_openai_chat_connection(self):
         try:
             logger.info("Connecting to GPT-4o's Latest Variant")
-            chat_llm = OpenAIChat(max_tokens=4000, temperature=0.4, model='gpt-4o')
+            chat_llm = OpenAIChat(max_tokens=4000, temperature=0.6, model='gpt-4o')
             return chat_llm
         except Exception as e:
             logger.error(f"Error in connecting to GPT-3.5: {str(e)}")
