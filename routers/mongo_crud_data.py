@@ -4,12 +4,13 @@ from typing import Union, Annotated
 from fastapi import APIRouter, status
 from fastapi import Form, Header
 from starlette.responses import JSONResponse
-from ..settings.config import Config
+from settings.config import Config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+Config = Config()
 client = Config.get_mongo_client()
 
 db = client["nutrition_ai"]

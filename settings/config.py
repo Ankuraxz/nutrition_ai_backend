@@ -9,6 +9,7 @@ from openai import OpenAI as visionopenai
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class Config:
     _instance = None
 
@@ -26,19 +27,17 @@ class Config:
             )
 
         try:
-            self.open_ai_key= os.environ["OPENAI_API_KEY"]
+            self.open_ai_key = os.environ["OPENAI_API_KEY"]
             self.mongo_uri = os.environ["MONGO_URI"]
             self.s3_host = "https://lhcxejigtkoaeghtmncc.supabase.co/storage/v1/s3"
             self.s3_region = "us-west-1"
             self.s3_secret_key = os.environ["S3_SECRET_KEY"]
             self.s3_access_key = os.environ["S3_ACCESS_KEY"]
-            self.milvus_host="https://in03-e5bab4e640f79fb.api.gcp-us-west1.zillizcloud.com"
+            self.milvus_host = "https://in03-e5bab4e640f79fb.api.gcp-us-west1.zillizcloud.com"
 
         except KeyError as e:
             logger.error(f"Missing environment variable: {e}")
             raise e
-
-
 
     def get_mongo_client(self):
         try:
@@ -50,7 +49,6 @@ class Config:
         except Exception as e:
             logger.error(f"Error in connecting to MongoDB: {str(e)}")
             raise e
-
 
     def get_openai_chat_connection(self):
         try:
@@ -70,14 +68,12 @@ class Config:
             logger.error(f"Error in connecting to OpenAI Vision: {str(e)}")
             raise e
 
-
     def get_s3_client(self):
         try:
             logger.info("Connecting to S3")
-            s3_client = boto3.client('s3', region_name=self.s3_region, aws_access_key_id=self.s3_access_key, aws_secret_access_key=self.s3_secret_key)
+            s3_client = boto3.client('s3', region_name=self.s3_region, aws_access_key_id=self.s3_access_key,
+                                     aws_secret_access_key=self.s3_secret_key)
             return s3_client
         except Exception as e:
             logger.error(f"Error in connecting to S3: {str(e)}")
             raise e
-
-

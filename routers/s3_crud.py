@@ -5,12 +5,13 @@ from typing import Union, Annotated
 from fastapi import APIRouter, status
 from fastapi import Form, Header
 from starlette.responses import JSONResponse
-from ..settings.config import Config
+from settings.config import Config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+Config = Config()
 s3_client = Config.get_s3_client()
 
 #Helper functions

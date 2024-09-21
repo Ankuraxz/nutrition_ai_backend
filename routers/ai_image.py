@@ -4,16 +4,17 @@ import os
 import requests
 from fastapi import APIRouter, Form, HTTPException, Header
 from typing import Optional, Annotated, Union
-from mongo_crud_data import *
-from s3_crud import *
+from routers.mongo_crud_data import *
+from routers.s3_crud import *
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
-from ..settings.config import Config
+from settings.config import Config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+Config = Config()
 vision_llm = Config.get_openai_vision_connection()
 
 

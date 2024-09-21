@@ -6,13 +6,14 @@ from fastapi import APIRouter, Form, HTTPException, Header
 from typing import Optional, Annotated, Union
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAIChat
-from mongo_crud_data import *
-from ..settings.config import Config
+from routers.mongo_crud_data import *
+from settings.config import Config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+Config = Config()
 client = Config.get_mongo_client()
 chat_llm = Config.get_openai_chat_connection()
 
