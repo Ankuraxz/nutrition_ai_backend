@@ -220,6 +220,7 @@ async def delete_user_info_from_mongo(email_id: str) -> JSONResponse:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
 
+
 @router.post("/write_calorie_info_to_mongo", tags=["mongo_db"])
 async def write_calorie_info_to_mongo(email_id: Annotated[Union[str, None], Header()],
                                       calorie_count: int = Form(...)) -> JSONResponse:
@@ -234,7 +235,8 @@ async def write_calorie_info_to_mongo(email_id: Annotated[Union[str, None], Head
         logger.info(f"Data received for writing to mongo db")
         if email_id in collection.distinct("email_id"):
             current_calorie_data = collection.find_one({"email_id": email_id}, {"_id": 0})
-            collection.update_one({"email_id": email_id}, {"$set": {"data": calorie_count + int(current_calorie_data['data'])}})
+            collection.update_one({"email_id": email_id},
+                                  {"$set": {"data": calorie_count + int(current_calorie_data['data'])}})
         else:
             collection.insert_one({"email_id": email_id, "data": int(calorie_count)})
         return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data written to mongo db"})
@@ -242,6 +244,7 @@ async def write_calorie_info_to_mongo(email_id: Annotated[Union[str, None], Head
         logger.error(f"Error in writing data to mongo db: {str(e)}")
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
+
 
 @router.get("/read_calorie_info_from_mongo/{email_id}", tags=["mongo_db"])
 async def read_calorie_info_from_mongo(email_id: str) -> JSONResponse:
@@ -264,9 +267,10 @@ async def read_calorie_info_from_mongo(email_id: str) -> JSONResponse:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
 
+
 @router.post("/delete_calorie_info_from_mongo", tags=["mongo_db"])
 async def delete_calorie_info_from_mongo(email_id: Annotated[Union[str, None], Header()],
-                                      calorie_count: int = Form(...)) -> JSONResponse:
+                                         calorie_count: int = Form(...)) -> JSONResponse:
     """
     Deletes data from mongo db
     :param calorie_count:
@@ -278,7 +282,8 @@ async def delete_calorie_info_from_mongo(email_id: Annotated[Union[str, None], H
         logger.info(f"Data received for deleting from mongo db")
         if email_id in collection.distinct("email_id"):
             current_calorie_data = collection.find_one({"email_id": email_id}, {"_id": 0})
-            collection.update_one({"email_id": email_id}, {"$set": {"data": current_calorie_data['data'] - calorie_count }})
+            collection.update_one({"email_id": email_id},
+                                  {"$set": {"data": current_calorie_data['data'] - calorie_count}})
             return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data deleted from mongo db"})
         else:
             return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "No data found in mongo db"})
@@ -286,4 +291,3 @@ async def delete_calorie_info_from_mongo(email_id: Annotated[Union[str, None], H
         logger.error(f"Error in deleting data from mongo db: {str(e)}")
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
-

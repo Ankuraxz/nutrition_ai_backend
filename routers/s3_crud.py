@@ -2,6 +2,7 @@ import os
 import logging
 import uuid
 from fastapi import APIRouter, status, UploadFile, Form, Header
+from typing import Union
 from starlette.responses import JSONResponse
 from settings.config import Config
 from typing import Annotated
@@ -73,16 +74,16 @@ def get_username_from_email(email: str) -> str:
 
 
 @router.post("/upload_to_s3", tags=["s3"])
-async def upload_to_s3_api(
-        image_file: UploadFile = Form(...),
-        email: Annotated[str, Header(...)] = Header(...)
-) -> JSONResponse:
+async def upload_to_s3_api(email_id: Annotated[Union[str, None], Header()],
+                           image_file: UploadFile = Form(...),
+
+                           ) -> JSONResponse:
     """
     Uploads an image file to S3 using username (derived from email) as folder.
     """
     try:
         # Extract username from email
-        username = get_username_from_email(email)
+        username = get_username_from_email(email_id)
 
         # Validate image type
         if image_file.content_type not in ["image/jpeg", "image/jpg", "image/png"]:
@@ -114,32 +115,8 @@ async def upload_to_s3_api(
                             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@router.get("/download_from_s3", tags=["s3"])
-async def download_from_s3_api(
-        email: Annotated[str, Header(...)] = Header(...),
-        image_name: str = Header(...)
-) -> JSONResponse:
-    """
-    Downloads a file from S3 using username (derived from email) as folder.
-    """
-    try:
-        username = get_username_from_email(email)
-
-        if download_from_s3(username, image_name):
-            return JSONResponse(content={"message": "File downloaded successfully"}, status_code=status.HTTP_200_OK)
-        else:
-            return JSONResponse(content={"message": "Error in downloading file"},
-                                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except Exception as e:
-        logger.error(f"Error in downloading file from S3: {str(e)}")
-        return JSONResponse(content={"message": f"Error in downloading file: {str(e)}"},
-                            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
-@router.get("/all_images_from_s3", tags=["s3"])
-async def all_images_from_s3_api(
-        email: Annotated[str, Header(...)] = Header(...)
-) -> JSONResponse:
+@router.get("/all_images_from_s3/{email}", tags=["s3"])
+async def all_images_from_s3_api(email) -> JSONResponse:
     """
     Retrieves all images from a folder in the S3 bucket (username as folder).
     """
@@ -155,16 +132,16 @@ async def all_images_from_s3_api(
                             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@router.delete("/delete_from_s3", tags=["s3"])
+@router.post("/delete_from_s3", tags=["s3"])
 async def delete_from_s3_api(
-        email: Annotated[str, Header(...)] = Header(...),
+        email_id: Annotated[Union[str, None], Header()],
         image_name: str = Header(...)
 ) -> JSONResponse:
     """
     Deletes a file from S3 using username (derived from email) as folder.
     """
     try:
-        username = get_username_from_email(email)
+        username = get_username_from_email(email_id)
 
         if delete_from_s3(username, image_name):
             return JSONResponse(content={"message": "File deleted successfully"}, status_code=status.HTTP_200_OK)
