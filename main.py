@@ -4,7 +4,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import ai_image, s3_crud, mongo_crud_data, ai_gpt
+from routers import ai_image, mongo_crud_data, ai_gpt
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,7 +26,6 @@ app.add_middleware(
 )
 
 app.include_router(ai_image.router, prefix="/ai_image", tags=["ai_image"])
-app.include_router(s3_crud.router, prefix="/s3", tags=["s3"])
 app.include_router(mongo_crud_data.router, prefix="/mongo", tags=["mongo"])
 app.include_router(ai_gpt.router, prefix="/health", tags=["chat"])
 

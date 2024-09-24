@@ -18,23 +18,6 @@ client = Config.get_mongo_client()
 chat_llm = Config.get_openai_chat_connection()
 
 
-def json_cleaner(data):
-    """
-    Cleans data to make json compatible, removing extra whitespaces and newlines and ' and " from the data
-    :param data:
-    :return:
-    """
-    try:
-        data = str(data)
-        data = data.replace("\n", " ")
-        data = data.replace("\r", " ")
-        data = data.replace("  ", " ")
-        data = data.replace("\\", "")
-        data = data.replace("/", "")
-        return json.loads(data)
-    except Exception as e:
-        logger.error(f"Error in cleaning data: {str(e)}")
-        return data
 
 
 @router.post("/chat", tags=["chat_ai"])
