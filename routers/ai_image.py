@@ -7,6 +7,7 @@ from typing import Optional, Annotated, Union
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, PublicAccess
 from settings.config import Config
 from settings.utils import get_username_from_email
+from mongo_crud_data import save_calorie_to_mongo
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -101,7 +102,7 @@ async def get_calorie_value(email_id: Annotated[Union[str, None], Header()],
         )
 
         # Return the response with the calorie value
-        return {"name": response2.choices[0].message.content, "calorie_value": response1.choices[0].message.content}
+        return {"name": response2.choices[0].message.content, "calorie_value": response1.choices[0].message.content, "total_calories": total_calories}
 
     except Exception as e:
         logger.error(f"Error processing image for calorie value: {str(e)}")

@@ -5,6 +5,7 @@ from fastapi import APIRouter, status
 from fastapi import Form, Header
 from starlette.responses import JSONResponse
 from settings.config import Config
+from datetime import datetime, timedelta
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -15,6 +16,28 @@ client = Config.get_mongo_client()
 
 db = client["nutrition_ai"]
 collection = db["nutrition_app_user"]
+
+
+def save_calorie_to_mongo(email: str, calorie: int, food_item: str) -> dict:
+    try:
+        collection_calorie = db['calorie_data']
+        # Insert the calorie data
+        collection_calorie.insert_one({"email_id": email, "calorie": calorie, "food_item": food_item, "date": datetime.now()})
+
+        # Calculate total calories for the user
+        total_calorie_cursor = collection_calorie.aggregate([
+            {"$match": {"email_id": email}},
+            {"$group": {"_id": None, "total": {"$sum": "$calorie"}}}
+        ])
+
+        # Extract the total calorie from the cursor
+        total_calorie = next(total_calorie_cursor, {"total": calorie})["total"]
+
+        return {"total_calorie": total_calorie}
+
+    except Exception as e:
+        logger.error(f"Error in writing calorie data to MongoDB: {str(e)}")
+        return None
 
 
 def save_chat_to_mongo(email: str, history: str) -> None:
@@ -291,3 +314,102 @@ async def delete_calorie_info_from_mongo(email_id: Annotated[Union[str, None], H
         logger.error(f"Error in deleting data from mongo db: {str(e)}")
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
+
+
+@router.post("/write_calorie_to_mongo", tags=["mongo_db"])
+async def write_calorie_to_mongo(email_id: Annotated[Union[str, None], Header()],
+                                 calorie: int = Form(...), food_item: str = Form(...)) -> JSONResponse:
+    """
+    Writes data to mongo db
+    :param email_id:
+    :param calorie:
+    :param food_item:
+    :return:
+    """
+    try:
+        logger.info(f"Data received for writing to mongo db")
+        result = save_calorie_to_mongo(email_id, calorie, food_item)
+        if result:
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data written to mongo db",
+                                                                         "total_calorie": result["total_calorie"]})
+        else:
+            return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                content={"message": "Internal server error"})
+    except Exception as e:
+        logger.error(f"Error in writing data to mongo db: {str(e)}")
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content={"message": "Internal server error"})
+
+
+@router.get("/get_total_calorie/{email_id}", tags=["mongo_db"])
+async def get_total_calorie(email_id: str) -> JSONResponse:
+    """
+    Reads data from mongo db
+    :param email_id:
+    :return:
+    """
+    try:
+        collection = db["calorie_data"]
+        logger.info(f"Data received for reading from mongo db")
+        if email_id in collection.distinct("email_id"):
+            total_calorie_cursor = collection.aggregate([
+                {"$match": {"email_id": email_id}},
+                {"$group": {"_id": None, "total": {"$sum": "$data"}}}
+            ])
+            total_calorie = next(total_calorie_cursor, {"total": 0})["total"]
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data fetched from mongo db",
+                                                                         "total_calorie": total_calorie})
+        else:
+            return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"message": "No data found in mongo db"})
+    except Exception as e:
+        logger.error(f"Error in reading data from mongo db: {str(e)}")
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content={"message": "Internal server error"})
+
+@router.get("/get_weekly_calorie/{email_id}", tags=["mongo_db"])
+@router.get("/get_weekly_calorie/{email_id}", tags=["mongo_db"])
+async def get_weekly_calorie(email_id: str) -> JSONResponse:
+    """
+    Gets the day-by-day total calorie consumption for the last 7 days for the specified user.
+    :param email_id: The email ID of the user
+    :return: Day-by-day total calorie consumption in the last 7 days
+    """
+    try:
+        logger.info(f"Fetching daily calorie data for the last 7 days for {email_id}")
+
+        today = datetime.now()
+        week_ago = today - timedelta(days=7)
+
+        # Access the calorie data collection
+        collection_calorie = db['calorie_data']
+
+        # Aggregate day-by-day calorie data for the last 7 days
+        daily_calorie_cursor = collection_calorie.aggregate([
+            {"$match": {"email_id": email_id, "date": {"$gte": week_ago}}},
+            {
+                # Group by day (ignoring the time part)
+                "$group": {
+                    "_id": {"$dateToString": {"format": "%Y-%m-%d", "date": "$date"}},
+                    "total_calories": {"$sum": "$calorie"}
+                }
+            },
+            {
+                "$sort": {"_id": -1}
+            }
+        ])
+        daily_calorie_data = []
+        for day_data in daily_calorie_cursor:
+            daily_calorie_data.append({
+                "date": day_data["_id"],
+                "total_calories": day_data["total_calories"]
+            })
+
+        return JSONResponse(status_code=status.HTTP_200_OK, content={"daily_calorie_data": daily_calorie_data})
+
+    except Exception as e:
+        logger.error(f"Error in fetching daily calorie data from MongoDB: {str(e)}")
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            content={"message": "Internal server error"})
+
+
+
