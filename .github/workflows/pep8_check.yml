@@ -3,7 +3,7 @@ name: PEP 8 Lint
 on:
   push:
     branches:
-      - master
+      - main
   pull_request:
 
 jobs:
