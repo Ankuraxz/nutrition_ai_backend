@@ -17,6 +17,7 @@ client = Config.get_mongo_client()
 db = client["nutrition_ai"]
 collection = db["nutrition_app_user"]
 
+
 def save_recommendation_to_mongo(email: str, recommendation: str) -> None:
     try:
         collection_recommendation = db['nutrition_recommendation_data']
@@ -28,11 +29,13 @@ def save_recommendation_to_mongo(email: str, recommendation: str) -> None:
         logger.error(f"Error in writing recommendation data to mongo db: {str(e)}")
         return None
 
+
 def save_calorie_to_mongo(email: str, calorie: int, food_item: str) -> dict:
     try:
         collection_calorie = db['calorie_data']
         # Insert the calorie data
-        collection_calorie.insert_one({"email_id": email, "calorie": calorie, "food_item": food_item, "date": datetime.now()})
+        collection_calorie.insert_one(
+            {"email_id": email, "calorie": calorie, "food_item": food_item, "date": datetime.now()})
 
         # Calculate total calories for the user
         total_calorie_cursor = collection_calorie.aggregate([
@@ -376,7 +379,7 @@ async def get_total_calorie(email_id: str) -> JSONResponse:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
 
-@router.get("/get_weekly_calorie/{email_id}", tags=["mongo_db"])
+
 @router.get("/get_weekly_calorie/{email_id}", tags=["mongo_db"])
 async def get_weekly_calorie(email_id: str) -> JSONResponse:
     """
@@ -421,6 +424,7 @@ async def get_weekly_calorie(email_id: str) -> JSONResponse:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
 
+
 @router.get("/get_old_recommendation/{email_id}", tags=["mongo_db"])
 def get_old_recommendation_from_mongo(email_id: str) -> dict:
     try:
@@ -433,5 +437,3 @@ def get_old_recommendation_from_mongo(email_id: str) -> dict:
     except Exception as e:
         logger.error(f"Error in reading recommendation data from mongo db: {str(e)}")
         return {}
-
-

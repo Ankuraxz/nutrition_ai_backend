@@ -25,6 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+#Routers
 app.include_router(ai_image.router, prefix="/ai_image", tags=["ai_image"])
 app.include_router(mongo_crud_data.router, prefix="/mongo", tags=["mongo_db"])
 app.include_router(ai_gpt.router, prefix="/health", tags=["chat_ai"])
