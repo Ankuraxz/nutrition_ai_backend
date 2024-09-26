@@ -30,4 +30,5 @@ app.include_router(mongo_crud_data.router, prefix="/mongo", tags=["mongo_db"])
 app.include_router(ai_gpt.router, prefix="/health", tags=["chat_ai"])
 app.include_router(ai_gpt.router, prefix="/grocery", tags=["grocery"])
 app.include_router(ai_gpt.router, prefix="/meal", tags=["meal"])
+app.include_router(ai_gpt.router, prefix="/recommend", tags=["recommend"])
 

@@ -17,6 +17,16 @@ client = Config.get_mongo_client()
 db = client["nutrition_ai"]
 collection = db["nutrition_app_user"]
 
+def save_recommendation_to_mongo(email: str, recommendation: str) -> None:
+    try:
+        collection_recommendation = db['nutrition_recommendation_data']
+        if email in collection_recommendation.distinct("email_id"):
+            collection_recommendation.update_one({"email_id": email}, {"$set": {"recommendation": recommendation}})
+        collection_recommendation.insert_one({"email_id": email, "recommendation": recommendation})
+        return None
+    except Exception as e:
+        logger.error(f"Error in writing recommendation data to mongo db: {str(e)}")
+        return None
 
 def save_calorie_to_mongo(email: str, calorie: int, food_item: str) -> dict:
     try:
@@ -411,5 +421,17 @@ async def get_weekly_calorie(email_id: str) -> JSONResponse:
         return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             content={"message": "Internal server error"})
 
+@router.get("/get_old_recommendation/{email_id}", tags=["mongo_db"])
+def get_old_recommendation_from_mongo(email_id: str) -> dict:
+    try:
+        collection_recommendation = db['nutrition_recommendation_data']
+        if email_id in collection_recommendation.distinct("email_id"):
+            data = collection_recommendation.find_one({"email_id": email_id}, {"_id": 0})
+            return json.loads(data['recommendation'])
+        else:
+            return {}
+    except Exception as e:
+        logger.error(f"Error in reading recommendation data from mongo db: {str(e)}")
+        return {}
 
 
