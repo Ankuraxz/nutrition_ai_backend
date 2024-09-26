@@ -101,7 +101,7 @@ async def get_calorie_value(email_id: Annotated[Union[str, None], Header()],
         )
 
         # Return the response with the calorie value
-        return {"name": response2.choices[0].message.content, "calorie_value": response1.choices[0].message.content, "total_calories": total_calories}
+        return {"name": response2.choices[0].message.content, "calorie_value": response1.choices[0].message.content}
 
     except Exception as e:
         logger.error(f"Error processing image for calorie value: {str(e)}")

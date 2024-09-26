@@ -13,5 +13,4 @@ tiktoken
 pypdf
 urllib3
 tavily-python
-boto3
 azure-storage-blob
