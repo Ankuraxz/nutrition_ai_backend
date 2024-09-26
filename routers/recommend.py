@@ -32,7 +32,7 @@ def recommendation_generator(email_id):
             raise HTTPException(status_code=404, detail="User data not found in mongo db")
         template = """You are an AI powered Recommendation generator, you will be provided with a user profile  {user_data} 
         containing key information around weight, height, calorie count, body goals, diet goals etc. Generate Recommeneded activities, food, lifestyle changes, etc. based on the user's profile.
-        Output these in plaintext paragraphs. COmment on Key exercises, Protien COntent per weight, Calorie Intake, lifestyle changes, must eat suplements and more.
+        Output these in plaintext short paragraph . Comment on Key exercises, Protien COntent per weight, Calorie Intake, lifestyle changes, must eat suplements and more.
         """
 
         prompt = PromptTemplate.from_template(template)
