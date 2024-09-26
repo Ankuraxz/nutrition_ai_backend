@@ -104,7 +104,6 @@ def load_grocery_list_from_mongo(email: str) -> dict:
 
 def get_user_data_from_mongo(email: str) -> dict:
     try:
-        collection = db["nutrition_user"]
         if email in collection.distinct("email_id"):
             data = collection.find_one({"email_id": email}, {"_id": 0})
             return json.loads(data['data'])
@@ -139,13 +138,14 @@ def verify_data(data: str) -> bool:
       "cuisine_preference": "indian", //american, italian, mexican, chinese, indian, thai, japanese
       "budget": 100, //0-100 dollars for weekly groceries
       "grocery_frequency": "weekly", //weekly, bi-weekly, monthly
+      "calorie_goal": 2000
     }
     :param data:
     :return: bool
     """
     try:
         data = json.loads(data)
-        if "name" in data and "age" in data and "gender" in data and "height" in data and "weight" in data and "activity_level" in data and "exercise_hours" in data and "job_type" in data and "work_type" in data and "work_hours" in data and "cooking_hours" in data and "proficiency_in_cooking" in data and "goals" in data and "dietary_restrictions" in data and "diet_type" in data and "allergies" in data and "cuisine_preference" in data and "budget" in data and "grocery_frequency" in data:
+        if "name" in data and "age" in data and "gender" in data and "height" in data and "weight" in data and "activity_level" in data and "exercise_hours" in data and "job_type" in data and "work_type" in data and "work_hours" in data and "cooking_hours" in data and "proficiency_in_cooking" in data and "goals" in data and "dietary_restrictions" in data and "diet_type" in data and "allergies" in data and "cuisine_preference" in data and "budget" in data and "grocery_frequency" in data and "calorie_goal" in data:
             return True
         else:
             return False

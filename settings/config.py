@@ -1,6 +1,6 @@
 import logging
 import os
-from langchain.llms import OpenAIChat
+from langchain_openai import ChatOpenAI as OpenAI
 import pymongo
 import certifi
 import boto3
@@ -34,9 +34,9 @@ class Config:
             self.AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
             self.AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
             self.milvus_host = "https://in03-e5bab4e640f79fb.api.gcp-us-west1.zillizcloud.com"
-            self.azure_storage_name="calorieinfo"
-            self.azure_storage_connection_string=os.environ["AZURE_STORAGE_CONN_STRING"]
-            self.azure_storage_key=os.environ["AZURE_STORAGE_KEY"]
+            self.azure_storage_name = "calorieinfo"
+            self.azure_storage_connection_string = os.environ["AZURE_STORAGE_CONN_STRING"]
+            self.azure_storage_key = os.environ["AZURE_STORAGE_KEY"]
 
         except KeyError as e:
             logger.error(f"Missing environment variable: {e}")
@@ -56,7 +56,11 @@ class Config:
     def get_openai_chat_connection(self):
         try:
             logger.info("Connecting to GPT-4o's Latest Variant")
-            chat_llm = OpenAIChat(max_tokens=4000, temperature=0.6, model='gpt-4o')
+            chat_llm = OpenAI(max_tokens=4000, temperature=0.6, model='gpt-4o')
+            if chat_llm is None:
+                raise Exception("Error in connecting to GPT-4o's Latest Variant")
+            else:
+                logger.info("Connected to GPT-4o's Latest Variant")
             return chat_llm
         except Exception as e:
             logger.error(f"Error in connecting to GPT-3.5: {str(e)}")
@@ -66,25 +70,13 @@ class Config:
         try:
             logger.info("Connecting to OpenAI Vision")
             vision_client = visionopenai()
+            if vision_client is None:
+                raise Exception("Error in connecting to OpenAI Vision")
+            else:
+                logger.info("Connected to OpenAI Vision")
             return vision_client
         except Exception as e:
             logger.error(f"Error in connecting to OpenAI Vision: {str(e)}")
-            raise e
-
-    def get_s3_client(self):
-        try:
-            logger.info("Connecting to S3")
-            s3_client = boto3.client(
-                's3',
-                aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
-                aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
-            if s3_client is None:
-                raise Exception("Error in connecting to S3")
-            else:
-                logger.info("Connected to S3")
-            return s3_client
-        except Exception as e:
-            logger.error(f"Error in connecting to S3: {str(e)}")
             raise e
 
     def get_azure_storage_client(self):
