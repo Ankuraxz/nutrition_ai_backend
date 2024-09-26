@@ -3,7 +3,6 @@ import os
 from langchain_openai import ChatOpenAI as OpenAI
 import pymongo
 import certifi
-import boto3
 from openai import OpenAI as visionopenai
 from azure.storage.blob import BlobServiceClient
 
@@ -30,10 +29,6 @@ class Config:
         try:
             self.open_ai_key = os.environ["OPENAI_API_KEY"]
             self.mongo_uri = os.environ["MONGO_URI"]
-            self.s3_host = "https://lhcxejigtkoaeghtmncc.supabase.co/storage/v1/s3"
-            self.AWS_ACCESS_KEY_ID = os.environ["AWS_ACCESS_KEY_ID"]
-            self.AWS_SECRET_ACCESS_KEY = os.environ["AWS_SECRET_ACCESS_KEY"]
-            self.milvus_host = "https://in03-e5bab4e640f79fb.api.gcp-us-west1.zillizcloud.com"
             self.azure_storage_name = "calorieinfo"
             self.azure_storage_connection_string = os.environ["AZURE_STORAGE_CONN_STRING"]
             self.azure_storage_key = os.environ["AZURE_STORAGE_KEY"]

@@ -7,7 +7,6 @@ from typing import Optional, Annotated, Union
 from azure.storage.blob import BlobServiceClient, BlobClient, ContainerClient, PublicAccess
 from settings.config import Config
 from settings.utils import get_username_from_email
-from routers.mongo_crud_data import save_calorie_to_mongo
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
