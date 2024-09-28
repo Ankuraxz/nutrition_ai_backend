@@ -1,6 +1,6 @@
 import logging
 from typing import Union, Annotated
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, HTTPException
 from fastapi import Form, Header
 from starlette.responses import JSONResponse
 from settings.config import Config
@@ -68,6 +68,39 @@ async def get_total_calorie_by_date(email_id: str, date: str) -> JSONResponse:
     except Exception as e:
         logger.error(f"Error while fetching calorie data: {e}")
         return JSONResponse(status_code=500, content={"message": "An error occurred while fetching calorie data"})
+
+
+@router.get("/get_individual_calorie_by_date/{email_id}/{date}", tags=["calorie"])
+async def get_individual_calorie_by_date(email_id: str, date: str) -> JSONResponse:
+    """
+    Reads calorie data from MongoDB for a specific user (email_id) and date.
+    :param email_id: The email ID of the user.
+    :param date: The date for which to retrieve the calorie data (YYYY-MM-DD).
+    :return: Individual calorie count for the given date.
+    """
+    try:
+        logger.info(f"Fetching calorie data for email_id: {email_id} and date: {date}")
+
+        if email_id not in collection.distinct("email_id"):
+            raise HTTPException(status_code=404, detail="Email ID not found in the database")
+
+        # Query to filter records by email_id and the exact date
+        calorie_data = collection.find(
+            {"email_id": email_id, "date": date},
+            {"_id": 0}
+        )
+        if calorie_data:
+            # Return the individual calorie data for the specified date
+            return JSONResponse(status_code=200, content={"email_id": email_id, "date": date, "calorie_data": list(calorie_data)})
+        else:
+            raise HTTPException(status_code=404, detail="No calorie data found for the specified date")
+    except HTTPException as http_err:
+        logger.warning(f"HTTP error occurred: {http_err.detail}")
+        raise http_err
+
+    except Exception as e:
+        logger.error(f"Error while fetching calorie data: {e}")
+        return JSONResponse(status_code=500, content={"message": "An internal server error occurred"})
 
 
 @router.get("/get_weekly_calorie/{email_id}", tags=["calorie"])

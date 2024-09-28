@@ -271,3 +271,5 @@ def get_old_recommendation_from_mongo(email_id: str) -> dict:
     except Exception as e:
         logger.error(f"Error in reading recommendation data from mongo db: {str(e)}")
         return {}
+
+
