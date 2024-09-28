@@ -59,7 +59,7 @@ def load_meal_from_mongo(email: str) -> dict:
         collection_meal = db['meal_data']
         if email in collection_meal.distinct("email_id"):
             data = collection_meal.find_one({"email_id": email}, {"_id": 0})
-            return json.loads(data['meal'])
+            return data['meal']
         else:
             return {}
     except Exception as e:
