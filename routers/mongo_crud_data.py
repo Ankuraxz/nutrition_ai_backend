@@ -6,6 +6,7 @@ from fastapi import Form, Header
 from starlette.responses import JSONResponse
 from settings.config import Config
 from datetime import datetime, timedelta
+from settings.utils import bmi_calculator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -181,12 +182,18 @@ async def write_user_info_to_mongo(email_id: Annotated[Union[str, None], Header(
     if verify_data(data):
 
         try:
+            data_json = json.loads(data)
+            weight = float(data_json['weight'])
+            height = float(data_json['height'])
+            bmi = bmi_calculator(weight, height)
+            if not bmi:
+                bmi = ""
             logger.info(f"Data received for writing to mongo db")
             if email_id in collection.distinct("email_id"):
                 collection.update_one({"email_id": email_id}, {"$set": {"data": data}})
             else:
                 collection.insert_one({"email_id": email_id, "data": data})
-            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data written to mongo db"})
+            return JSONResponse(status_code=status.HTTP_200_OK, content={"message": "Data written to mongo db", "bmi": bmi})
         except Exception as e:
             logger.error(f"Error in writing data to mongo db: {str(e)}")
             return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
