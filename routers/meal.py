@@ -41,7 +41,7 @@ def meal_generator(email_id):
         TASK: You need to generate easy to cook at home meals for entire week, 3 meals per day as breakfast, lunch dinner based on user's preferences keeping in mind cooking hours & cooking proficiency and budget and dietary restrictions and allergy and nutritional goals and provide the information as json 
         Example Response: ['day1':['breakfast':"eggs 19 calorie", 'lunch':"chicken salad 24 calorie", 'dinner':"pasta 34 calorie"], 'day2':['breakfast':"oatmeal", 'lunch':"chicken sandwich", 'dinner':"rice"], 'day3':['breakfast':"pancakes", 'lunch':"chicken soup", 'dinner':"pasta"], 'day4':['breakfast':"eggs", 'lunch':"chicken salad", 'dinner':"pasta"], 'day5':['breakfast':"oatmeal", 'lunch':"chicken sandwich", 'dinner':"rice"], 'day6':['breakfast':"pancakes", 'lunch':"chicken soup", 'dinner':"pasta"], 'day7':['breakfast':"eggs", 'lunch':"chicken salad", 'dinner':"pasta"]]
         REMEMBER: day, breakfast, lunch, dinner are the keys and the values are the meals for the day along with their calorie count per serving
-        RESPONSE CONSTRAINT: DO NOT OUTPUT EXTRA CHARACTERS, JUST OUTPUT RESPONSE TO THE CUSTOMER IN PROPER JSON.
+        RESPONSE CONSTRAINT: DO NOT OUTPUT EXTRA CHARACTERS like 'json' or '```', JUST OUTPUT RESPONSE TO THE CUSTOMER IN PROPER TEXT AS JSON.
         """
 
         prompt = PromptTemplate.from_template(template)
