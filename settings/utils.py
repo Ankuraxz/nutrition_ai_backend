@@ -12,23 +12,41 @@ def get_username_from_email(email: str) -> str:
     return email.split('@')[0]
 
 
+import json
+import logging
+
+logger = logging.getLogger(__name__)
+
 def json_cleaner(data):
     """
-    Cleans data to make json compatible, removing extra whitespaces and newlines and ' and " from the data
-    :param data:
-    :return:
+    Cleans data to make it JSON-compatible by removing unnecessary whitespaces and ensuring proper quotation marks.
+    :param data: Input data as a string
+    :return: JSON-compatible data or original string if parsing fails
     """
     try:
+        # Convert data to a string if not already
         data = str(data)
+
+        # Remove extra newlines and whitespace
+        data = " ".join(data.split())
+
+        # Ensure JSON-friendly quotes
+        data = data.replace("'", '"')  # Convert single quotes to double quotes for JSON compatibility
         data = data.replace("\n", " ")
         data = data.replace("\r", " ")
         data = data.replace("  ", " ")
         data = data.replace("\\", "")
         data = data.replace("/", "")
+
+        # Attempt to parse and load as JSON
         return json.loads(data)
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decoding error: {str(e)}")
+        return data  # Return the original data if parsing fails
     except Exception as e:
         logger.error(f"Error in cleaning data: {str(e)}")
         return data
+
 
 
 def clean_grocery_list(grocery_list):
